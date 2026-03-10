@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RideNow Hyderabad</title>
+
+<style>
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,sans-serif;
+}
+
+body{
+background:linear-gradient(135deg,#1e3c72,#2a5298);
+color:white;
+text-align:center;
+}
+
+.hero{
+padding:80px 20px;
+}
+
+.hero h2{
+font-size:60px;
+margin-bottom:30px;
+}
+
+button{
+padding:15px 30px;
+border:none;
+border-radius:20px;
+background:orange;
+color:white;
+font-size:18px;
+cursor:pointer;
+margin:10px;
+width:300px;
+}
+
+.booking{
+padding:50px 20px;
+}
+
+input,select,textarea{
+padding:15px;
+margin:10px;
+width:300px;
+border:none;
+border-radius:10px;
+font-size:18px;
+}
+
+textarea{
+height:100px;
+display:none;
+}
+
+#tip,#payment,#otpBox,#submitTip,#submitComplaint,#ratingBox,#cancelRide{
+display:none;
+}
+
+.star{
+font-size:35px;
+cursor:pointer;
+color:gray;
+}
+
+.star.selected{
+color:gold;
+}
+
+#driverPhoto{
+display:none;
+width:100px;
+height:100px;
+border-radius:50%;
+margin:20px auto;
+}
+
+#timer{
+font-size:22px;
+margin:15px;
+}
+</style>
+</head>
+<body>
+
+<section class="hero">
+<h2>Your Ride, Anytime Anywhere</h2>
+<button onclick="scrollToBooking()">Book Now</button>
+</section>
+
+<section class="booking" id="bookingSection">
+
+<h1>Book Ride</h1>
+
+<input list="locations" id="pickup" placeholder="Pickup Location">
+<input list="locations" id="drop" placeholder="Drop Location">
+
+<datalist id="locations">
+<option value="Hitech City">
+<option value="Secunderabad">
+<option value="Bachupally">
+<option value="Miyapur">
+<option value="Kukatpally">
+<option value="Ameerpet">
+<option value="Gachibowli">
+<option value="Kondapur">
+<option value="Madhapur">
+<option value="LB Nagar">
+<option value="Begumpet">
+<option value="Jubilee Hills">
+<option value="Banjara Hills">
+<option value="Uppal">
+<option value="Dilsukhnagar">
+</datalist>
+
+<br>
+
+<select id="vehicle">
+<option value="car">Car 🚗</option>
+<option value="bike">Bike 🏍️</option>
+</select>
+
+<br>
+
+<button onclick="calculateFare()">Confirm Booking</button>
+
+<div id="result"></div>
+
+<img id="driverPhoto" src="https://randomuser.me/api/portraits/men/32.jpg">
+
+<div id="timer"></div>
+
+<input type="text" id="otpBox" placeholder="Enter OTP">
+
+<input type="number" id="tip" placeholder="Tip ₹">
+
+<select id="payment">
+<option>Cash</option>
+<option>PhonePe</option>
+<option>GPay</option>
+<option>Paytm</option>
+</select>
+
+<button id="submitTip" onclick="submitTip()">Submit Payment</button>
+
+<div id="ratingBox">
+<span class="star" onclick="rate(1)">★</span>
+<span class="star" onclick="rate(2)">★</span>
+<span class="star" onclick="rate(3)">★</span>
+<span class="star" onclick="rate(4)">★</span>
+<span class="star" onclick="rate(5)">★</span>
+</div>
+
+<textarea id="complaint" placeholder="Complaint"></textarea>
+
+<button id="submitComplaint" onclick="submitComplaint()">Submit Complaint</button>
+
+<button id="cancelRide" onclick="cancelRide()">Cancel Ride</button>
+
+<div id="extraResult"></div>
+
+</section>
+
+<script>
+let totalFare=0;
+let otp=Math.floor(1000+Math.random()*9000);
+
+const locations={
+"Hitech City":[17.4435,78.3772],
+"Secunderabad":[17.4399,78.4983],
+"Bachupally":[17.5449,78.3841],
+"Miyapur":[17.4969,78.3560],
+"Kukatpally":[17.4849,78.4138],
+"Ameerpet":[17.4374,78.4482],
+"Gachibowli":[17.4401,78.3489],
+"Kondapur":[17.4698,78.3621],
+"Madhapur":[17.4483,78.3915],
+"LB Nagar":[17.3457,78.5522],
+"Begumpet":[17.4440,78.4626],
+"Jubilee Hills":[17.4326,78.4071],
+"Banjara Hills":[17.4126,78.4482],
+"Uppal":[17.4058,78.5591],
+"Dilsukhnagar":[17.3688,78.5247]
+};
+
+function scrollToBooking(){
+document.getElementById("bookingSection").scrollIntoView({behavior:"smooth"});
+}
+
+function haversine(lat1, lon1, lat2, lon2){
+let R=6371;
+let dLat=(lat2-lat1)*Math.PI/180;
+let dLon=(lon2-lon1)*Math.PI/180;
+
+let a=
+Math.sin(dLat/2)**2+
+Math.cos(lat1*Math.PI/180)*
+Math.cos(lat2*Math.PI/180)*
+Math.sin(dLon/2)**2;
+
+let c=2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+
+return R*c;
+}
+
+function calculateFare(){
+
+let pickup=document.getElementById("pickup").value;
+let drop=document.getElementById("drop").value;
+let vehicle=document.getElementById("vehicle").value;
+
+if(!locations[pickup] || !locations[drop]){
+document.getElementById("result").innerHTML="❌ Select valid Hyderabad locations";
+return;
+}
+
+let start=locations[pickup];
+let end=locations[drop];
+
+let distance=haversine(start[0],start[1],end[0],end[1]);
+
+let baseFare=(vehicle==="car")?50:30;
+let perKm=(vehicle==="car")?10:6;
+
+totalFare=baseFare+(distance*perKm);
+
+let drivers=["Raj","Amit","Suresh","Vikram"];
+let driver=drivers[Math.floor(Math.random()*drivers.length)];
+
+document.getElementById("result").innerHTML=
+"🚗 Driver Assigned: "+driver+
+"<br>📏 Distance: "+distance.toFixed(2)+" km"+
+"<br>💰 Fare: ₹"+totalFare.toFixed(2)+
+"<br>🔐 OTP: "+otp;
+
+document.getElementById("driverPhoto").style.display="block";
+document.getElementById("otpBox").style.display="inline-block";
+document.getElementById("tip").style.display="inline-block";
+document.getElementById("payment").style.display="inline-block";
+document.getElementById("submitTip").style.display="inline-block";
+document.getElementById("ratingBox").style.display="block";
+document.getElementById("complaint").style.display="inline-block";
+document.getElementById("submitComplaint").style.display="inline-block";
+document.getElementById("cancelRide").style.display="inline-block";
+
+startTimer();
+}
+
+function startTimer(){
+let t=10;
+let timer=setInterval(()=>{
+document.getElementById("timer").innerHTML="⏱️ Ride arrives in "+t+" sec";
+t--;
+if(t<0){
+clearInterval(timer);
+document.getElementById("timer").innerHTML="✅ Driver Arrived";
+}
+},1000);
+}
+
+function submitTip(){
+let entered=document.getElementById("otpBox").value;
+let tip=parseFloat(document.getElementById("tip").value)||0;
+let payment=document.getElementById("payment").value;
+
+if(entered!=otp){
+alert("Wrong OTP");
+return;
+}
+
+document.getElementById("extraResult").innerHTML=
+"💳 Payment: "+payment+
+"<br>💰 Tip: ₹"+tip+
+"<br>💵 Final Fare: ₹"+(totalFare+tip).toFixed(2);
+}
+
+function rate(n){
+let stars=document.querySelectorAll(".star");
+stars.forEach((s,i)=>{
+if(i<n)s.classList.add("selected");
+else s.classList.remove("selected");
+});
+document.getElementById("extraResult").innerHTML+="<br>⭐ Rating: "+n+"/5";
+}
+
+function submitComplaint(){
+let c=document.getElementById("complaint").value;
+document.getElementById("extraResult").innerHTML+="<br>📝 Complaint: "+c;
+}
+
+function cancelRide(){
+document.getElementById("extraResult").innerHTML+="<br>❌ Ride Cancelled";
+}
+</script>
+
+</body>
+</html>
